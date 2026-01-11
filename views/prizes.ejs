@@ -1,0 +1,25 @@
+<h2>Beschikbare Prijzen</h2>
+
+<% if (success) { %>
+  <div style="color: green;"><%= success %></div>
+<% } %>
+<% if (error) { %>
+  <div style="color: red;"><%= error %></div>
+<% } %>
+
+<ul>
+  <% prizes.forEach(prize => { %>
+    <li>
+      <%= prize.name %> - <%= prize.cost %> punten
+
+      <% if (user.role === 'kind' && points >= prize.cost) { %>
+        <form action="/prizes/redeem" method="POST" style="display:inline;">
+          <input type="hidden" name="prizeId" value="<%= prize.id %>">
+          <button type="submit">Kies deze prijs</button>
+        </form>
+      <% } else if (user.role === 'kind') { %>
+        <span>(Niet genoeg punten)</span>
+      <% } %>
+    </li>
+  <% }) %>
+</ul>

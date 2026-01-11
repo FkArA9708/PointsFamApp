@@ -1,0 +1,291 @@
+<!-- 
+  DASHBOARD HOOFDPAGINA
+  Toont gepersonaliseerd overzicht op basis van gebruikersrol (ouder/kind)
+  Bevat:
+  - Takenoverzicht
+  - Puntenbeheer
+  - Prijzenlijst
+  - Gezinsdashboard
+-->
+<h2>Welkom, <%= user.username %> (<%= user.role %>)</h2>
+
+<!-- Succes/foutmeldingen -->
+<% if (success) { %>
+  <div class="success"><%= success %></div>
+<% } %>
+
+<% if (error) { %>
+  <div class="error"><%= error %></div>
+<% } %>
+
+<!-- Puntenweergave voor kinderen -->
+<% if (user.role === 'kind') { %>
+  <div class="card">
+    <h3>Jouw punten: <strong><%= points %></strong></h3>
+  </div>
+<% } %>
+
+<!-- TAKENOVERZICHT -->
+<div class="card">
+  <h3>Taken</h3>
+  <ul>
+    <% tasks.forEach(task => { %>
+      <li>
+        <strong><%= task.title %></strong> - <%= task.points %> punten
+        <!-- Deadline weergave indien aanwezig -->
+        <% if (task.date) { %>
+  • Deadline: <%= new Date(task.date).toLocaleDateString('nl-NL') %>
+<% } %>
+        <!-- Actieknoppen op basis van rol en taakstatus -->
+        <% if (!task.done && user.role === 'kind') { %>
+          <form action="/task/complete/<%= task.id %>" method="POST" style="display:inline">
+            <button type="submit">Markeer als voltooid</button>
+          </form>
+        <% } else if (task.done) { %>
+          <span>✅ Voltooid</span>
+        <% } %>
+        
+        <% if (task.done && !task.approved && user.role === 'ouder') { %>
+           <!-- Ouder kan voltooide taak goedkeuren -->
+          <form action="/task/approve/<%= task.id %>" method="POST" style="display:inline">
+            <button type="submit">Goedkeuren</button>
+          </form>
+        <% } else if (task.approved) { %>
+          <span>✅ Goedgekeurd</span>
+        <% } %>
+        
+        <!-- Bewerkingsopties voor ouders -->
+        <% if (user.role === 'ouder') { %>
+          <a href="/task/edit/<%= task.id %>" style="margin-left: 10px; color: #1d4ed8; text-decoration: none;">Bewerken</a>
+          <form action="/task/delete/<%= task.id %>" method="POST" style="display:inline">
+            <button type="submit" style="margin-left: 5px; background-color: #ef4444;" 
+                    onclick="return confirm('Weet je zeker dat je deze taak wilt verwijderen?')">
+              Verwijderen
+            </button>
+          </form>
+        <% } %>
+      </li>
+    <% }) %>
+  </ul>
+</div>
+<!-- OUDER-SPECIFIEKE SECTIES -->
+<% if (user.role === 'ouder') { %>
+  <!-- PUNTEN TOEKENNEN -->
+  <div class="card">
+    <h3>Punten toekennen</h3>
+    <form action="/points/add" method="POST">
+      <label for="username">Kind:</label>
+      <select name="username" id="username" required>
+        <% familyChildren.forEach(child => { %>
+          <option value="<%= child.username %>"><%= child.username %></option>
+        <% }) %>
+      </select>
+      
+      <label for="points">Punten:</label>
+      <input type="number" name="points" id="points" min="1" required>
+      
+      <label for="reason">Reden:</label>
+      <input type="text" name="reason" id="reason" required>
+      
+      <button type="submit">Punten toekennen</button>
+    </form>
+  </div>
+
+ 
+<!-- NIEUWE TAAK TOEVOEGEN -->
+<div class="card">
+  <h3>Nieuwe taak toevoegen</h3>
+  <form action="/task/add" method="POST">
+    <label for="title">Taaknaam:</label>
+    <div style="display: flex; gap: 10px;">
+      <input 
+        type="text" 
+        name="title" 
+        id="title" 
+        list="defaultTasks"
+        placeholder="Typ of selecteer taak"
+        required
+        style="flex: 1;">
+      <!-- Snelle selectie van standaardtaken -->
+      <select id="taskSelector" style="width: 200px;" onchange="setTaskValue(this.value)">
+        <option value="">Standaard taken</option>
+        <option value="Vaatwasser inruimen">Vaatwasser inruimen</option>
+        <option value="Kamer opruimen">Kamer opruimen</option>
+        <option value="Hond uitlaten">Hond uitlaten</option>
+        <option value="Tanden poetsen">Tanden poetsen</option>
+        <option value="Afwassen">Afwassen</option>
+        <option value="Afval weggooien">Afval weggooien</option>
+        <option value="Huiswerk maken">Huiswerk maken</option>
+        <option value="Stofzuigen">Stofzuigen</option>
+        <option value="Bed opmaken">Bed opmaken</option>
+        <option value="Boodschappen doen">Boodschappen doen</option>
+      </select>
+    </div>
+     <!-- Autocomplete suggesties -->
+    <datalist id="defaultTasks">
+      <option>Vaatwasser inruimen</option>
+      <option>Kamer opruimen</option>
+      <option>Hond uitlaten</option>
+      <option>Tanden poetsen</option>
+      <option>Afwassen</option>
+      <option>Afval weggooien</option>
+      <option>Huiswerk maken</option>
+      <option>Stofzuigen</option>
+      <option>Bed opmaken</option>
+      <option>Boodschappen doen</option>
+    </datalist>
+    
+    <label for="points">Punten:</label>
+    <input type="number" name="points" id="points" min="1" required>
+    
+    <label for="assignedTo">Toewijzen aan:</label>
+    <select name="assignedTo" id="assignedTo" required>
+      <% familyChildren.forEach(child => { %>
+        <option value="<%= child.username %>"><%= child.username %></option>
+      <% }) %>
+    </select>
+    
+    <label for="type">Type:</label>
+    <select name="type" id="type">
+      <option value="standaard">Standaard</option>
+      <option value="tijdelijk">Tijdelijk</option>
+    </select>
+    
+    <label for="date">Deadline (optioneel):</label>
+    <input type="date" name="date" id="date">
+    
+    <button type="submit">Taak toevoegen</button>
+  </form>
+</div>
+
+<script>
+  function setTaskValue(value) {
+    if(value) {
+      document.getElementById('title').value = value;
+    }
+  }
+</script>
+<% } %>
+
+
+<!-- PRIJZENLIJST -->
+<div class="card">
+  <h3>Prijzenlijst</h3>
+  <ul>
+    <% prizes.forEach((prize, index) => { %>
+      <li class="prize-card">
+        <!-- OUDER: Bewerkingsinterface -->
+        <% if (user.role === "ouder") { %>
+          <form action="/prizes/edit/<%= index %>" method="POST" style="display:flex; gap:10px; align-items:center;">
+            <input type="text" name="name" value="<%= prize.name %>" required style="flex:1;">
+            <input type="number" name="cost" value="<%= prize.cost %>" required style="width:80px;">
+            <button type="submit">Bewerken</button>
+            <button type="submit" formaction="/prizes/delete/<%= index %>"
+                    onclick="return confirm('Weet je het zeker?')"
+                    style="background-color:#ef4444;">
+              Verwijderen
+            </button>
+          </form>
+        <% } else { %>
+          <!-- KIND: Verzilveringsinterface -->
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <strong><%= prize.name %></strong> - <%= prize.cost %> punten
+              <form action="/prizes/redeem" method="POST">
+                <input type="hidden" name="prizeId" value="<%= prize.id %>">
+                 <!-- Disable knop bij onvoldoende punten -->
+                <button type="submit" <% if (points < prize.cost) { %>disabled<% } %>>Verzilveren</button>
+              </form>
+            </div>
+          </div>
+        <% } %>
+      </li>
+    <% }) %>
+  </ul>
+<!-- Nieuwe prijs toevoegen (alleen voor ouders) -->
+  <% if (user.role === "ouder") { %>
+    <h4>Prijs toevoegen</h4>
+    <form action="/prizes/add" method="POST" style="display:flex; gap:10px;">
+      <input type="text" name="name" placeholder="Prijs naam" required style="flex:1;">
+      <input type="number" name="cost" placeholder="Kosten" min="1" required style="width:100px;">
+      <button type="submit">Toevoegen</button>
+    </form>
+  <% } %>
+</div>
+
+
+<!-- PUNTENOVERZICHT -->
+<% if (user.role === 'ouder') { %>
+  <div class="card">
+    <!-- Ouder: overzicht van alle kinderen -->
+    <h3>Puntenoverzicht kinderen</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Naam</th>
+          <th>Punten</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% childPoints.forEach(child => { %>
+          <tr>
+            <td><%= child.username %></td>
+            <td><%= child.points %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+<% } else { %>
+  <div class="card">
+    <!-- Kind: overzicht van hele gezin -->
+    <h3>Puntenoverzicht familie</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Naam</th>
+          <th>Punten</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% childPoints.forEach(child => { %>
+          <tr>
+            <td>
+              <!-- Markeer huidige gebruiker -->
+              <% if (child.username === user.username) { %>
+                <strong><%= child.username %></strong>
+              <% } else { %>
+                <%= child.username %>
+              <% } %>
+            </td>
+            <td>
+              <% if (child.username === user.username) { %>
+                <strong><%= child.points %></strong>
+              <% } else { %>
+                <%= child.points %>
+              <% } %>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+<% } %>
+<!-- VERZILVERDE PRIJZEN (alleen voor ouders) -->
+<% if (user.role === 'ouder' && redeemedPrizes.length > 0) { %>
+  <div class="card">
+    <h3>Gekozen prijzen</h3>
+    <ul>
+      <% redeemedPrizes.forEach(entry => { %>
+        <li>
+          <strong><%= entry.username %>:</strong>
+          <%= entry.prizes.map(p => p.name).join(", ") %>
+        </li>
+      <% }) %>
+    </ul>
+  </div>
+<% } %>
+<!-- NAVIGATIE NAAR BERICHTENCENTRUM -->
+<div style="margin-top: 20px; text-align: center;">
+  <a href="/messages" id="berichtencentrumlink">Naar berichtencentrum</a>
+</div>

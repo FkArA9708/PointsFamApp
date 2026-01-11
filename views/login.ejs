@@ -1,0 +1,25 @@
+<h2>Login</h2>
+<% if (typeof error !== "undefined" && error) { %>
+  <p style="color: red;"><%= error %></p>
+<% } %>
+
+<p class="demo-hint">
+  Demo-accounts: Zie READ.md voor gebruikersnamen en wachtwoorden
+</p>
+
+<form action="/login" method="POST">
+  <label>Naam:</label>
+  <input type="text" name="username" required />
+
+  <label>Wachtwoord:</label>
+  <input type="password" name="password" required />
+
+  <label>Rol:</label>
+  <select name="role">
+    <option value="ouder">Ouder</option>
+    <option value="kind">Kind</option>
+  </select>
+
+  <button type="submit">Login</button>
+</form>
+

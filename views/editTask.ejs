@@ -1,0 +1,10 @@
+<h2>Taak bewerken</h2>
+
+<form action="/task/edit/<%= task.id %>" method="POST">
+  <label for="title">Taaknaam:</label>
+  <input type="text" id="title" name="title" value="<%= task.title %>" required />
+  
+  <button type="submit">Opslaan</button>
+</form>
+
+<a href="/dashboard" id="annuleren">Annuleren</a>

@@ -1,0 +1,77 @@
+
+<h2>Berichtencentrum</h2>
+
+<% if (success) { %>
+  <div class="success"><%= success %></div>
+<% } %>
+<% if (error) { %>
+  <div class="error"><%= error %></div>
+<% } %>
+
+
+<div class="card">
+  <h3>Berichten binnen het gezin</h3>
+  
+  <!-- Berichten weergeven -->
+  <div class="message-container">
+    <% messages.forEach(msg => { %>
+      <div class="message-card">
+    <div class="message-header">
+      <strong>
+        <% if (msg.fromFamily && msg.fromFamily !== user.familyId) { %>
+          <%= msg.from %> (Familie <%= msg.fromFamily %>)
+        <% } else { %>
+          <%= msg.from %>
+        <% } %>
+      </strong>
+      <span><%= new Date(msg.timestamp).toLocaleString('nl-NL') %></span>
+    </div>
+    <div class="message-content"><%= msg.message %></div>
+    <% if (msg.to) { %>
+      <div class="message-to">Aan: <%= msg.to %></div>
+    <% } else if (msg.toFamily) { %>
+      <div class="message-to">Aan familie: <%= msg.toFamily %></div>
+    <% } %>
+  </div>
+<% }) %>
+
+  <!-- Formulier om bericht te versturen -->
+  <form action="/messages" method="POST">
+    <label for="to">Verzenden naar:</label>
+    <select name="to" id="to">
+      <option value="family">Hele gezin</option>
+      <% familyMembers.forEach(member => { %>
+        <option value="<%= member.username %>"><%= member.username %></option>
+      <% }) %>
+    </select>
+    
+    <label for="message">Bericht:</label>
+    <textarea name="message" id="message" required></textarea>
+    
+    <button type="submit">Verzenden</button>
+  </form>
+</div>
+
+<!-- Cross-family communicatie (alleen voor ouders) -->
+<% if (user.role === 'ouder') { %>
+  <div class="card">
+    <h3>Communiceer met andere families</h3>
+    <form action="/messages/cross-family" method="POST">
+      <label for="toFamily">Selecteer familie:</label>
+      <select name="toFamily" id="toFamily" required>
+        <% otherFamilies.forEach(family => { %>
+          <option value="<%= family %>"><%= family %></option>
+        <% }) %>
+      </select>
+      
+      <label for="crossMessage">Bericht:</label>
+      <textarea name="message" id="crossMessage" required></textarea>
+      
+      <button type="submit">Verzenden naar familie</button>
+    </form>
+  </div>
+<% } %>
+
+<div style="text-align: center; margin-top: 20px;">
+  <a href="/dashboard" id="dashboardlink">Terug naar Dashboard</a>
+</div>
